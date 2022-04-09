@@ -12,6 +12,8 @@ from plnlp.logger import Logger
 from plnlp.model import BaseModel, adjust_lr
 from plnlp.utils import gcn_normalization, adj_normalization
 
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 
 def argument():
     parser = argparse.ArgumentParser()
@@ -24,7 +26,7 @@ def argument():
     parser.add_argument('--data_path', type=str, default='dataset')
     parser.add_argument('--eval_metric', type=str, default='hits')
     parser.add_argument('--walk_start_type', type=str, default='edge')
-    parser.add_argument('--res_dir', type=str, default='')
+    parser.add_argument('--res_dir', type=str, default='log')
     parser.add_argument('--pretrain_emb', type=str, default='')
     parser.add_argument('--gnn_num_layers', type=int, default=2)
     parser.add_argument('--mlp_num_layers', type=int, default=2)
