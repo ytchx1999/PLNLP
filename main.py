@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 import argparse
+import imp
 import time
 import torch
 import os
+import torch_geometric
 import torch_geometric.transforms as T
 from torch_geometric.utils import to_undirected
 from torch_sparse import coalesce, SparseTensor
@@ -11,8 +13,21 @@ from ogb.linkproppred import PygLinkPropPredDataset, Evaluator
 from plnlp.logger import Logger
 from plnlp.model import BaseModel, adjust_lr
 from plnlp.utils import gcn_normalization, adj_normalization
+import random
+import numpy as np
+
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+def set_seed(seed=0):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    torch_geometric.seed_everything(seed)
 
 
 def argument():
@@ -53,6 +68,8 @@ def argument():
     parser.add_argument('--use_valedges_as_input', type=str2bool, default=False)
     parser.add_argument('--eval_last_best', type=str2bool, default=False)
     parser.add_argument('--random_walk_augment', type=str2bool, default=False)
+    parser.add_argument('--num_heads', type=int, default=1)
+    parser.add_argument('--seed', type=int, default=0)
     args = parser.parse_args()
     return args
 
@@ -100,6 +117,8 @@ def main():
 
     # create log file and save args
     log_file_name = 'log_' + args.data_name + '_' + str(int(time.time())) + '.txt'
+    if not os.path.exists(args.res_dir):
+        os.makedirs(args.res_dir, exist_ok=True)
     log_file = os.path.join(args.res_dir, log_file_name)
     with open(log_file, 'a') as f:
         f.write(str(args) + '\n')
@@ -205,7 +224,8 @@ def main():
         device=device,
         use_node_feats=args.use_node_feats,
         train_node_emb=args.train_node_emb,
-        pretrain_emb=args.pretrain_emb
+        pretrain_emb=args.pretrain_emb,
+        num_heads=args.num_heads
     )
 
     total_params = sum(p.numel() for param in model.para_list for p in param)
@@ -235,6 +255,7 @@ def main():
             rw_start = torch.arange(0, num_nodes, dtype=torch.long).to(device)
 
     for run in range(args.runs):
+        set_seed(args.seed + run)
         model.param_init()
         start_time = time.time()
 
@@ -252,7 +273,7 @@ def main():
                 # remove self-loop edges
                 mask = ((pairs[:, 0] - pairs[:, 1]) != 0)
                 split_edge['train']['edge'] = torch.masked_select(pairs, mask.view(-1, 1)).view(-1, 2)
-                split_edge['train']['weight'] = torch.masked_select(weights, mask)
+                split_edge['train']['weight'] = torch.masked_select(weights.to(device), mask)
 
             loss = model.train(data, split_edge,
                                batch_size=args.batch_size,

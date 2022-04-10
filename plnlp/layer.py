@@ -55,12 +55,15 @@ class WSAGE(BaseGNN):
 
 
 class Transformer(BaseGNN):
-    def __init__(self, in_channels, hidden_channels, out_channels, num_layers, dropout):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_layers, dropout, num_heads=1):
         super(Transformer, self).__init__(dropout, num_layers)
         for i in range(num_layers):
-            first_channels = in_channels if i == 0 else hidden_channels
+            first_channels = in_channels if i == 0 else hidden_channels * num_heads
             second_channels = out_channels if i == num_layers - 1 else hidden_channels
-            self.convs.append(TransformerConv(first_channels, second_channels))
+            if i == num_layers -1:
+                self.convs.append(TransformerConv(first_channels, second_channels, heads=1))
+            else:
+                self.convs.append(TransformerConv(first_channels, second_channels, heads=num_heads))
 
 
 class MLPPredictor(torch.nn.Module):

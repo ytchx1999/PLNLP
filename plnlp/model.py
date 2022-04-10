@@ -45,7 +45,7 @@ class BaseModel(object):
     def __init__(self, lr, dropout, grad_clip_norm, gnn_num_layers, mlp_num_layers, emb_hidden_channels,
                  gnn_hidden_channels, mlp_hidden_channels, num_nodes, num_node_feats, gnn_encoder_name,
                  predictor_name, loss_func, optimizer_name, device, use_node_feats, train_node_emb,
-                 pretrain_emb=None):
+                 pretrain_emb=None, num_heads=1):
         self.loss_func_name = loss_func
         self.num_nodes = num_nodes
         self.num_node_feats = num_node_feats
@@ -53,6 +53,7 @@ class BaseModel(object):
         self.train_node_emb = train_node_emb
         self.clip_norm = grad_clip_norm
         self.device = device
+        self.num_heads = num_heads
 
         # Input Layer
         self.input_channels, self.emb = create_input_layer(num_nodes=num_nodes,
@@ -69,7 +70,8 @@ class BaseModel(object):
                                         hidden_channels=gnn_hidden_channels,
                                         num_layers=gnn_num_layers,
                                         dropout=dropout,
-                                        encoder_name=gnn_encoder_name).to(device)
+                                        encoder_name=gnn_encoder_name,
+                                        num_heads=num_heads).to(device)
 
         # Predict Layer
         self.predictor = create_predictor_layer(hidden_channels=mlp_hidden_channels,
@@ -249,13 +251,13 @@ def create_input_layer(num_nodes, num_node_feats, hidden_channels, use_node_feat
     return input_dim, emb
 
 
-def create_gnn_layer(input_channels, hidden_channels, num_layers, dropout=0, encoder_name='SAGE'):
+def create_gnn_layer(input_channels, hidden_channels, num_layers, dropout=0, encoder_name='SAGE', num_heads=1):
     if encoder_name.upper() == 'GCN':
         return GCN(input_channels, hidden_channels, hidden_channels, num_layers, dropout)
     elif encoder_name.upper() == 'WSAGE':
         return WSAGE(input_channels, hidden_channels, hidden_channels, num_layers, dropout)
     elif encoder_name.upper() == 'TRANSFORMER':
-        return Transformer(input_channels, hidden_channels, hidden_channels, num_layers, dropout)
+        return Transformer(input_channels, hidden_channels, hidden_channels, num_layers, dropout, num_heads)
     else:
         return SAGE(input_channels, hidden_channels, hidden_channels, num_layers, dropout)
 
