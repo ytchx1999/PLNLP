@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import argparse
-import imp
+# import imp
 import time
 import torch
 import os
@@ -42,7 +42,7 @@ def argument():
     parser.add_argument('--eval_metric', type=str, default='hits')
     parser.add_argument('--walk_start_type', type=str, default='edge')
     parser.add_argument('--res_dir', type=str, default='log')
-    parser.add_argument('--pretrain_emb', type=str, default='')
+    parser.add_argument('--pretrain_emb', type=str, default='log/embedding.pt')
     parser.add_argument('--gnn_num_layers', type=int, default=2)
     parser.add_argument('--mlp_num_layers', type=int, default=2)
     parser.add_argument('--emb_hidden_channels', type=int, default=256)
@@ -202,7 +202,7 @@ def main():
     if args.encoder.upper() == 'WSAGE':
         data.adj_t = adj_normalization(data.adj_t)
 
-    if args.encoder.upper() == 'TRANSFORMER':
+    if args.encoder.upper() in  ['TRANSFORMER', 'GAT', 'GATV2']:
         row, col, edge_weight = data.adj_t.coo()
         data.adj_t = SparseTensor(row=row, col=col)
 

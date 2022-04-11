@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import torch
 import torch.nn.functional as F
-from torch_geometric.nn import SAGEConv, GCNConv, GraphConv, TransformerConv
+from torch_geometric.nn import SAGEConv, GCNConv, GraphConv, TransformerConv, GATConv, GATv2Conv
 
 
 class BaseGNN(torch.nn.Module):
@@ -52,6 +52,30 @@ class WSAGE(BaseGNN):
             first_channels = in_channels if i == 0 else hidden_channels
             second_channels = out_channels if i == num_layers - 1 else hidden_channels
             self.convs.append(GraphConv(first_channels, second_channels))
+
+
+class GAT(BaseGNN):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_layers, dropout, num_heads=1):
+        super(GAT, self).__init__(dropout, num_layers)
+        for i in range(num_layers):
+            first_channels = in_channels if i == 0 else hidden_channels * num_heads
+            second_channels = out_channels if i == num_layers - 1 else hidden_channels
+            if i == num_layers -1:
+                self.convs.append(GATConv(first_channels, second_channels, heads=1))
+            else:
+                self.convs.append(GATConv(first_channels, second_channels, heads=num_heads))
+
+
+class GATv2(BaseGNN):
+    def __init__(self, in_channels, hidden_channels, out_channels, num_layers, dropout, num_heads=1):
+        super(GATv2, self).__init__(dropout, num_layers)
+        for i in range(num_layers):
+            first_channels = in_channels if i == 0 else hidden_channels * num_heads
+            second_channels = out_channels if i == num_layers - 1 else hidden_channels
+            if i == num_layers -1:
+                self.convs.append(GATv2Conv(first_channels, second_channels, heads=1))
+            else:
+                self.convs.append(GATv2Conv(first_channels, second_channels, heads=num_heads))
 
 
 class Transformer(BaseGNN):

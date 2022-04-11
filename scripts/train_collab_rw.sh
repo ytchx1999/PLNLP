@@ -16,8 +16,12 @@ python ../main.py \
 --random_walk_augment=True \
 --walk_length=10 \
 --loss_func=WeightedHingeAUC \
---num_heads 2 \
---device 3 \
---use_node_feats=True \
+--num_heads 4 \
+--device 1 \
 --emb_hidden_channels 128 \
---seed 0
+--gnn_hidden_channels 128 \
+--use_node_feats=True \
+--pretrain_emb=True \
+--seed 0 
+
+# --encoder TRANSFORMER \
